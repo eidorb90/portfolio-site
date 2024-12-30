@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Game of Life</title>
+    <link rel="stylesheet" href="/static/css/styles.css"> 
+</head>
+<body>
+    <canvas class="gameCanvas" id="gameCanvas"></canvas>
+    <div class="controls">
+        <button class="game-button" onclick="startStop()">Start/Stop</button>
+        <button class="game-button" onclick="clearGrid()">Clear</button>
+        <button class="game-button" onclick="randomize()">Random</button>
+    </div>  
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const cellSize = 10;
+        const cols = 171;
+        const rows = 80;
+        let grid = createGrid();
+        let isRunning = false;
+        let intervalId = null;
+
+        canvas.width = cols * cellSize;
+        canvas.height = rows * cellSize;
+
+        function createGrid() {
+            return Array(rows).fill().map(() => Array(cols).fill(0));
+        }
+
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for(let i = 0; i < rows; i++) {
+                for(let j = 0; j < cols; j++) {
+                    if(grid[i][j] === 1) {
+                        ctx.fillRect(j * cellSize, i * cellSize, cellSize - 1, cellSize - 1);
+                    }
+                }
+            }
+        }
+
+        function updateGrid() {
+            const newGrid = createGrid();
+            for(let i = 0; i < rows; i++) {
+                for(let j = 0; j < cols; j++) {
+                    const neighbors = countNeighbors(i, j);
+                    if(grid[i][j] === 1) {
+                        newGrid[i][j] = (neighbors === 2 || neighbors === 3) ? 1 : 0;
+                    } else {
+                        newGrid[i][j] = (neighbors === 3) ? 1 : 0;
+                    }
+                }
+            }
+            grid = newGrid;
+        }
+
+        function countNeighbors(x, y) {
+            let count = 0;
+            for(let i = -1; i <= 1; i++) {
+                for(let j = -1; j <= 1; j++) {
+                    if(i === 0 && j === 0) continue;
+                    const row = (x + i + rows) % rows;
+                    const col = (y + j + cols) % cols;
+                    count += grid[row][col];
+                }
+            }
+            return count;
+        }
+
+        function startStop() {
+            if(isRunning) {
+                clearInterval(intervalId);
+            } else {
+                intervalId = setInterval(() => {
+                    updateGrid();
+                    drawGrid();
+                }, 100);
+            }
+            isRunning = !isRunning;
+        }
+
+        // Change the function name from clear() to clearGrid()
+        function clearGrid() {
+            grid = createGrid();
+            drawGrid();
+        }
+
+        function randomize() {
+            grid = Array(rows).fill().map(() => 
+                Array(cols).fill().map(() => Math.random() > 0.7 ? 1 : 0)
+            );
+            drawGrid();
+        }
+
+        canvas.addEventListener('click', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((event.clientY - rect.top) / cellSize);
+            const y = Math.floor((event.clientX - rect.left) / cellSize);
+            grid[x][y] = 1 - grid[x][y];
+            drawGrid();
+        });
+
+        drawGrid();
+    </script>
+</body>
+</html> 
